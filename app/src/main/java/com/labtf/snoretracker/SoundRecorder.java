@@ -9,7 +9,7 @@ import android.util.Log;
  */
 public class SoundRecorder {
     private MediaRecorder rec;
-    private String LOG_TAG = "SoundRecorder";
+    private String TAG = "SoundRecorder";
     private static boolean recording = false;
 
     public SoundRecorder(String filepath){
@@ -24,10 +24,12 @@ public class SoundRecorder {
         try {
             rec.prepare();
         } catch (IOException e) {
-            Log.e("SoundRecorder", "prepare() failed due to ".concat(e.getMessage()));
+            Log.e(TAG, "prepare() failed due to ".concat(e.getMessage()));
             throw e;
         }
+
         rec.start();
+        recording = true;
     }
 
     public void Stop(){

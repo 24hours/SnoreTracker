@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
@@ -16,18 +17,15 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.media.MediaPlayer;
-import android.media.MediaRecorder;
-import android.os.Environment;
 import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -54,6 +52,9 @@ public class MainActivity extends ActionBarActivity{
      */
     ViewPager mViewPager;
     private static String TAG = "MainActivity";
+    private static String FOLDER = "SnoreTracker";
+    private String FILE_PATH;
+    private String extension = "mp4";
     private SnoreAnalyse sna = new SnoreAnalyse();
     private SoundRecorder sdr;
     private static CircularSeekBar seekbar;
@@ -68,6 +69,13 @@ public class MainActivity extends ActionBarActivity{
 
         mViewPager = (ViewPager) findViewById(R.id.pager);
         mViewPager.setAdapter(mSectionsPagerAdapter);
+        File file = new File(Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_MUSIC), FOLDER);
+        if(file.exists() == false || file.isDirectory() == false){
+            file.mkdir();
+        }
+
+        FILE_PATH = file.getAbsolutePath();
     }
 
     @Override
@@ -149,6 +157,7 @@ public class MainActivity extends ActionBarActivity{
             seekbar.setStartAngle(0);
             seekbar.highlight(0, 6000, Color.BLUE, 1);
             seekbar.highlight(500, 3000, Color.RED, 2);
+
             return rootView;
         }
     }
@@ -172,35 +181,49 @@ public class MainActivity extends ActionBarActivity{
     }
 
     public void onPlayClicked(View view){
-        if(sdr != null || sdr.isRecording() == true){
-            StopRecording();
-        } else {
-            sdr = new SoundRecorder();
-            sdr.Record();
-        }
-
-        isRecording = !isRecording;
+        String filename = FILE_PATH + "/" + generateFileName() + "." + extension;
         Button playBtn = (Button)view.findViewById(R.id.play);
-        if(isRecording){
-            playBtn.setText("Stop");
-        } else {
+
+        if(sdr != null && sdr.isRecording() == true){
+            sdr.Stop();
+            sdr = null;
             playBtn.setText("Record");
+
+        } else {
+            sdr = new SoundRecorder(filename);
+            try{
+                sdr.Record();
+            } catch (IOException e){
+                Toast toast = Toast.makeText(getApplicationContext(),
+                                            "Failed to Get Microphone",
+                                            Toast.LENGTH_LONG);
+                toast.show();
+            }
+            playBtn.setText("Stop");
         }
     }
 
     public void onListenClicked(View view){
-        if(mPlayer.isPlaying()){
-            pause(false);
-        } else {
-            play(sna.GetFilePath());
-        }
 
-        Button playBtn = (Button)view.findViewById(R.id.listen);
+    }
 
-        if(mPlayer.isPlaying()){
-            playBtn.setText("Pause");
-        } else {
-            playBtn.setText("Listen");
+    public String generateFileName(){
+        if( isExternalStorageWritable() == true){
+            // if user tap record twice, the original file it will get override.
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy_MM_dd_hh_mm");
+            return dateFormat.format(new Date());
+        } else{
+            return "";
         }
+    }
+
+
+    /* Checks if external storage is available for read and write */
+    public boolean isExternalStorageWritable() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state)) {
+            return true;
+        }
+        return false;
     }
 }
