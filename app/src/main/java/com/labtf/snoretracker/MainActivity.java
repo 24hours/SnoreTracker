@@ -3,6 +3,7 @@ package com.labtf.snoretracker;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -55,7 +56,7 @@ public class MainActivity extends ActionBarActivity{
     private static String FOLDER = "SnoreTracker";
     private String FILE_PATH;
     private String extension = "mp4";
-    private SnoreAnalyse sna = new SnoreAnalyse();
+    private SnoreAnalyse sna;
     private SoundRecorder sdr;
     private static CircularSeekBar seekbar;
     private Timer myTimer;
@@ -69,6 +70,7 @@ public class MainActivity extends ActionBarActivity{
 
         mViewPager = (ViewPager) findViewById(R.id.pager);
         mViewPager.setAdapter(mSectionsPagerAdapter);
+
         File file = new File(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_MUSIC), FOLDER);
         if(file.exists() == false || file.isDirectory() == false){
@@ -118,7 +120,7 @@ public class MainActivity extends ActionBarActivity{
                 case 0:
                     return new RecorderFragment();
                 case 1:
-                    return FileFragment.newInstance("yo","ho");
+                    return FileFragment.newInstance();
                 default:
                     return StatsFragment.newInstance("yo");
             }
@@ -154,9 +156,10 @@ public class MainActivity extends ActionBarActivity{
             seekbar = (CircularSeekBar)rootView.findViewById(R.id.seekbar);
 
             //seekbar.setOnSeekBarChangeListener(new CircleSeekBarListener());
-            seekbar.setStartAngle(0);
-            seekbar.highlight(0, 6000, Color.BLUE, 1);
-            seekbar.highlight(500, 3000, Color.RED, 2);
+            //seekbar.setStartAngle(-90);
+            seekbar.setProgress(0);
+//            seekbar.highlight(0, 6000, Color.BLUE, 1);
+//            seekbar.highlight(500, 3000, Color.RED, 2);
 
             return rootView;
         }
@@ -186,9 +189,7 @@ public class MainActivity extends ActionBarActivity{
 
         if(sdr != null && sdr.isRecording() == true){
             sdr.Stop();
-            sdr = null;
-            playBtn.setText("Record");
-
+            EventHandling(Event.Recording_Stop);
         } else {
             sdr = new SoundRecorder(filename);
             try{
@@ -199,12 +200,13 @@ public class MainActivity extends ActionBarActivity{
                                             Toast.LENGTH_LONG);
                 toast.show();
             }
-            playBtn.setText("Stop");
+            EventHandling(Event.Recording_Start);
         }
     }
 
     public void onListenClicked(View view){
-
+        sna.Stop();
+        EventHandling(Event.Stop_record);
     }
 
     public String generateFileName(){
@@ -217,7 +219,25 @@ public class MainActivity extends ActionBarActivity{
         }
     }
 
-
+    private void EventHandling(Event e){
+        Button playBtn = (Button)findViewById(R.id.play);
+        Button ListenBtn = (Button)findViewById(R.id.listen);
+        switch(e){
+            case Play_record:
+                ListenBtn.setText("Pause");
+                break;
+            case Stop_record:
+                ListenBtn.setText("Listen");
+                break;
+            case Recording_Start:
+                playBtn.setText("Stop");
+                break;
+            case Recording_Stop:
+                playBtn.setText("Record");
+                sdr = null;
+                break;
+        }
+    }
     /* Checks if external storage is available for read and write */
     public boolean isExternalStorageWritable() {
         String state = Environment.getExternalStorageState();
@@ -225,5 +245,29 @@ public class MainActivity extends ActionBarActivity{
             return true;
         }
         return false;
+    }
+
+    public void  LoadFile(String filename){
+        sna = new SnoreAnalyse(FILE_PATH + "/" +filename);
+        sna.Play();
+        sna.setOnCompletionListener(new SnaCompletion());
+
+        EventHandling(Event.Play_record);
+    }
+
+    public class SnaCompletion implements MediaPlayer.OnCompletionListener{
+        public void onCompletion(MediaPlayer mp){
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() { EventHandling(Event.Stop_record);  }
+            });
+        }
+    }
+
+    public enum Event {
+        Play_record,
+        Stop_record,
+        Recording_Start,
+        Recording_Stop,
     }
 }
