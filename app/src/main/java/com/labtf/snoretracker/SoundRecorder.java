@@ -1,5 +1,7 @@
 package com.labtf.snoretracker;
 
+import android.app.Service;
+import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import java.io.IOException;
 import android.util.Log;
@@ -10,7 +12,7 @@ import android.util.Log;
 public class SoundRecorder {
     private MediaRecorder rec;
     private String TAG = "SoundRecorder";
-    private static boolean recording = false;
+    private boolean recording = false;
 
     public SoundRecorder(String filepath){
         rec = new MediaRecorder();
