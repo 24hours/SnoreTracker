@@ -1,5 +1,7 @@
+package com.labtf.snoretracker;
+
 /*
- * 
+ *
  * Copyright 2013 Matt Joseph
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,23 +15,20 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
- * 
- * 
+ *
+ *
+ *
  * This custom view/widget was inspired and guided by:
- * 
+ *
  * HoloCircleSeekBar - Copyright 2012 Jes�s Manzano
  * HoloColorPicker - Copyright 2012 Lars Werkman (Designed by Marie Schweiz)
- * 
- * Although I did not used the code from either project directly, they were both used as 
+ *
+ * Although I did not used the code from either project directly, they were both used as
  * reference material, and as a result, were extremely helpful.
  */
 
-package com.labtf.snoretracker;
-
 import android.content.Context;
 import android.content.res.TypedArray;
-import android.graphics.BlurMaskFilter;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -39,10 +38,16 @@ import android.graphics.RectF;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
-public class CircularSeekBar extends View {
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Comparator;
+import java.util.Collections;
+
+public class Cirback extends View {
 
     /**
      * Used to scale the dp units to pixels
@@ -77,6 +82,7 @@ public class CircularSeekBar extends View {
     private static final boolean DEFAULT_MAINTAIN_EQUAL_CIRCLE = true;
     private static final boolean DEFAULT_MOVE_OUTSIDE_CIRCLE = false;
     private static final boolean DEFAULT_LOCK_ENABLED = true;
+    public ArrayList<highlight> highlightList = new ArrayList<highlight>();
 
     /**
      * {@code Paint} instance used to draw the inactive circle.
@@ -474,11 +480,10 @@ public class CircularSeekBar extends View {
         mCircleProgressPaint.setStrokeWidth(mCircleStrokeWidth);
         mCircleProgressPaint.setStyle(Paint.Style.STROKE);
         mCircleProgressPaint.setStrokeJoin(Paint.Join.ROUND);
-        mCircleProgressPaint.setStrokeCap(Paint.Cap.ROUND);
+        mCircleProgressPaint.setStrokeCap(Paint.Cap.SQUARE);
 
         mCircleProgressGlowPaint = new Paint();
         mCircleProgressGlowPaint.set(mCircleProgressPaint);
-        mCircleProgressGlowPaint.setMaskFilter(new BlurMaskFilter((5f * DPTOPX_SCALE), BlurMaskFilter.Blur.NORMAL));
 
         mPointerPaint = new Paint();
         mPointerPaint.setAntiAlias(true);
@@ -518,6 +523,10 @@ public class CircularSeekBar extends View {
     private void calculateProgressDegrees() {
         mProgressDegrees = mPointerPosition - mStartAngle; // Verified
         mProgressDegrees = (mProgressDegrees < 0 ? 360f + mProgressDegrees : mProgressDegrees); // Verified
+
+        Log.v("SEEK-Pos", new Float(mPointerPosition).toString());
+        Log.v("SEEK-start", new Float(mStartAngle).toString());
+        Log.v("SEEK", new Float(mProgressDegrees).toString());
     }
 
     /**
@@ -544,10 +553,11 @@ public class CircularSeekBar extends View {
      */
     private void initPaths() {
         mCirclePath = new Path();
-        mCirclePath.addArc(mCircleRectF, mStartAngle, mTotalCircleDegrees);
+        mCirclePath.addArc(mCircleRectF, 270, 360); // background
 
         mCircleProgressPath = new Path();
         mCircleProgressPath.addArc(mCircleRectF, mStartAngle, mProgressDegrees);
+
     }
 
     /**
@@ -566,6 +576,27 @@ public class CircularSeekBar extends View {
         canvas.drawPath(mCirclePath, mCirclePaint);
         canvas.drawPath(mCircleProgressPath, mCircleProgressGlowPaint);
         canvas.drawPath(mCircleProgressPath, mCircleProgressPaint);
+
+        // TODO : cache this thing
+        Paint p = new Paint();
+        p.setAntiAlias(true);
+        p.setDither(true);
+        p.setStrokeWidth(mCircleStrokeWidth);
+        p.setStyle(Paint.Style.STROKE);
+        p.setStrokeJoin(Paint.Join.ROUND);
+        p.setStrokeCap(Paint.Cap.SQUARE);
+        Iterator<highlight> it = highlightList.iterator();
+        while(it.hasNext())
+        {
+            highlight h = it.next();
+            //Do something with obj
+            p.setColor(h.color);
+            Path a = new Path();
+            a.addArc(mCircleRectF, h.start, h.end);
+            Log.e("Angle", Float.toString(h.start));
+
+            canvas.drawPath(a, p);
+        }
 
         canvas.drawPath(mCirclePath, mCircleFillPaint);
 
@@ -596,7 +627,6 @@ public class CircularSeekBar extends View {
             if (mOnCircularSeekBarChangeListener != null) {
                 mOnCircularSeekBarChangeListener.onProgressChanged(this, progress, false);
             }
-
             recalculateAll();
             invalidate();
         }
@@ -860,17 +890,17 @@ public class CircularSeekBar extends View {
         initPaints();
     }
 
-    public CircularSeekBar(Context context) {
+    public Cirback(Context context) {
         super(context);
         init(null, 0);
     }
 
-    public CircularSeekBar(Context context, AttributeSet attrs) {
+    public Cirback(Context context, AttributeSet attrs) {
         super(context, attrs);
         init(attrs, 0);
     }
 
-    public CircularSeekBar(Context context, AttributeSet attrs, int defStyle) {
+    public Cirback(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         init(attrs, defStyle);
     }
@@ -928,11 +958,11 @@ public class CircularSeekBar extends View {
      */
     public interface OnCircularSeekBarChangeListener {
 
-        public abstract void onProgressChanged(CircularSeekBar circularSeekBar, int progress, boolean fromUser);
+        public abstract void onProgressChanged(Cirback circularSeekBar, int progress, boolean fromUser);
 
-        public abstract void onStopTrackingTouch(CircularSeekBar seekBar);
+        public abstract void onStopTrackingTouch(Cirback seekBar);
 
-        public abstract void onStartTrackingTouch(CircularSeekBar seekBar);
+        public abstract void onStartTrackingTouch(Cirback seekBar);
     }
 
     /**
@@ -1092,4 +1122,49 @@ public class CircularSeekBar extends View {
         return mMax;
     }
 
+    public void setStartAngle(float start){
+        mStartAngle = ((360f + start % 360f)) % 360f;
+        calculateProgressDegrees();
+        calculateTotalDegrees();
+        recalculateAll();
+        invalidate();
+    }
+
+    public float getStartAngle(){
+        return mStartAngle;
+    }
+
+    public void highlight(int start, int end, int color, int zindex){
+        this.highlightList.add(new highlight(intToAngle(start), intToAngle(end), color, zindex));
+        Collections.sort(highlightList, new Comparator<highlight>() {
+            @Override
+            public int compare(highlight  h1, highlight  h2)
+            {
+                if(h1.zindex > h2.zindex){
+                    return 1;
+                } else {
+                    return -1;
+                }
+            }
+        });
+        recalculateAll();
+        invalidate();
+    }
+
+    private float intToAngle(int progress){
+        return (((progress * 360 ) /  getMax())  + 360) % 360f;
+    }
+
+    public class highlight{
+        private float start, end;
+        public int color;
+        private int zindex;
+
+        public highlight(float start , float end , int color, int zindex) {
+            this.start = start;
+            this.end = end;
+            this.color = color;
+            this.zindex = zindex;
+        }
+    }
 }
