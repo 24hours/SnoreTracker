@@ -552,8 +552,8 @@ public class CircularSeekBar extends View {
         mCirclePath.addArc(mCircleRectF, 270, 360); // background
 
         mCircleProgressPath = new Path();
-        mCircleProgressPath.addArc(mCircleRectF, mStartAngle, mProgressDegrees);
-
+        // mProgress seems to hate 0 as sweepAngle, use 0.05f to replace 0.
+        mCircleProgressPath.addArc(mCircleRectF, mStartAngle, mProgressDegrees > 0.05f? mProgressDegrees : 0.05f);
     }
 
     /**
