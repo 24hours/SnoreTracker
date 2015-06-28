@@ -247,22 +247,28 @@ public class MainActivity extends ActionBarActivity{
     }
 
     public void  LoadFile(String filename){
-        sna = new SnoreAnalyse(FILE_PATH + "/" +filename);
+        sna = new SnoreAnalyse(FILE_PATH + "/" +filename, new OnSnoreAnalyseChangeListener());
         sna.Play();
-        sna.setOnCompletionListener(new SnaCompletion());
 
         EventHandling(Event.Play_record);
     }
 
-    public class SnaCompletion implements MediaPlayer.OnCompletionListener{
-        public void onCompletion(MediaPlayer mp){
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() { EventHandling(Event.Stop_record);  }
-            });
-        }
-    }
+    public class OnSnoreAnalyseChangeListener implements SnoreAnalyse.OnSnoreAnalyseChangeListener {
 
+        public void onPrepared(SnoreAnalyse sna){
+            sna.Play();
+            Log.v(TAG, new Integer(sna.GetDuration()).toString());
+        }
+
+       public void onCompletePlaying(SnoreAnalyse sna){
+           runOnUiThread(new Runnable() {
+               @Override
+               public void run() { EventHandling(Event.Stop_record);  }
+           });
+       }
+//
+//        public abstract void onStartTrackingTouch(CircularSeekBar seekBar);
+    }
     public enum Event {
         Play_record,
         Stop_record,
