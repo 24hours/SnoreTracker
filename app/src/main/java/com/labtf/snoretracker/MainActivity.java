@@ -52,10 +52,11 @@ public class MainActivity extends ActionBarActivity{
      * The {@link ViewPager} that will host the section contents.
      */
     ViewPager mViewPager;
-    private static String TAG = "MainActivity";
-    private static String FOLDER = "SnoreTracker";
+    static String TAG = "MainActivity";
+    static String FOLDER = "SnoreTracker";
+    static String extension = "mp4";
+
     private String FILE_PATH;
-    private String extension = "mp4";
     private SnoreAnalyse sna;
     private SoundRecorder sdr;
     private static CircularSeekBar seekbar;
@@ -73,7 +74,7 @@ public class MainActivity extends ActionBarActivity{
 
         File file = new File(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_MUSIC), FOLDER);
-        if(file.exists() == false || file.isDirectory() == false){
+        if(!file.exists() || !file.isDirectory()){
             file.mkdir();
         }
 
@@ -154,10 +155,10 @@ public class MainActivity extends ActionBarActivity{
                                  Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.fragment_main, container, false);
             seekbar = (CircularSeekBar)rootView.findViewById(R.id.seekbar);
-
             //seekbar.setOnSeekBarChangeListener(new CircleSeekBarListener());
             //seekbar.setStartAngle(-90);
             seekbar.setProgress(0);
+            seekbar.setProgress(50);
 //            seekbar.highlight(0, 6000, Color.BLUE, 1);
 //            seekbar.highlight(500, 3000, Color.RED, 2);
 
@@ -205,8 +206,13 @@ public class MainActivity extends ActionBarActivity{
     }
 
     public void onListenClicked(View view){
-        sna.Stop();
-        EventHandling(Event.Stop_record);
+        if(sna.IsPlaying()) {
+            sna.Pause();
+            EventHandling(Event.Stop_record);
+        } else {
+            sna.Play();
+            EventHandling(Event.Play_record);
+        }
     }
 
     public String generateFileName(){
@@ -253,6 +259,8 @@ public class MainActivity extends ActionBarActivity{
         sna.setOnCompletionListener(new SnaCompletion());
 
         EventHandling(Event.Play_record);
+
+
     }
 
     public class SnaCompletion implements MediaPlayer.OnCompletionListener{

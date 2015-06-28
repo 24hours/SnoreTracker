@@ -64,7 +64,12 @@ public class SnoreAnalyse implements MediaPlayer.OnPreparedListener{
         }
     }
 
-
+    public void Pause(){
+        if( player.isPlaying()){
+            player.pause();
+        }
+        playing = false;
+    }
     public boolean IsPlaying(){
         return playing;
     }
