@@ -1131,8 +1131,8 @@ public class CircularSeekBar extends View {
 
 
     public void highlight(int start, int end, int color, int zindex){
-        float endAngle = (intToAngle(end)  + (mStartAngle - 350f)) % 360f;
-        float startAngle = (intToAngle(start) + (mStartAngle - 350f)) % 360f;
+        float endAngle = (intToAngle(end)  + (mStartAngle - 360f)) % 360f;
+        float startAngle = (intToAngle(start) + (mStartAngle - 360f)) % 360f;
         this.highlightList.add(new highlight(startAngle, endAngle-startAngle, color, zindex));
 
         Collections.sort(highlightList, new Comparator<highlight>() {
