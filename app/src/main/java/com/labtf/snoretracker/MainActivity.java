@@ -1,10 +1,8 @@
 package com.labtf.snoretracker;
 //http://romannurik.github.io/AndroidAssetStudio/icons-launcher.html
 
-import android.content.Context;
 import android.graphics.Color;
 import android.media.MediaPlayer;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v4.app.Fragment;
@@ -28,10 +26,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
-import java.util.Timer;
-import java.util.TimerTask;
 
-// TODO : Coloring the Circular bar [highlight] on designated area
 // TODO : Play the sound as seeked by user
 // TODO : Add "magnified" area to allow user easily see highlighted area
 // TODO : analyse snore
@@ -60,7 +55,6 @@ public class MainActivity extends ActionBarActivity{
     private SnoreAnalyse sna;
     private SoundRecorder sdr;
     private static CircularSeekBar seekbar;
-    private Timer myTimer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -148,47 +142,49 @@ public class MainActivity extends ActionBarActivity{
     }
 
     public static class RecorderFragment extends Fragment {
-        public RecorderFragment() {}
+        public RecorderFragment() {
+        }
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.fragment_main, container, false);
-            seekbar = (CircularSeekBar)rootView.findViewById(R.id.seekbar);
-            //seekbar.setOnSeekBarChangeListener(new CircleSeekBarListener());
-            //seekbar.setStartAngle(-90);
+
+            seekbar = (CircularSeekBar) rootView.findViewById(R.id.seekbar);
+            seekbar.setOnSeekBarChangeListener(new CircleSeekBarListener());
+            seekbar.setStartAngle(-90);
             seekbar.setProgress(0);
             seekbar.setProgress(50);
-//            seekbar.highlight(0, 6000, Color.BLUE, 1);
-//            seekbar.highlight(500, 3000, Color.RED, 2);
+            seekbar.highlight(0, 6000, Color.BLUE, 1);
+            seekbar.highlight(500, 3000, Color.RED, 2);
 
             return rootView;
         }
-    }
 
-    // event handling
+        // event handling
+        public class CircleSeekBarListener implements CircularSeekBar.OnCircularSeekBarChangeListener {
+            @Override
+            public void onProgressChanged(CircularSeekBar circularSeekBar, int progress, boolean fromUser) {
+                //TextView t = (TextView) ((MainActivity)getActivity()).findViewById(R.id.progress);
+                //t.setText(Integer.toString(progress));
+                Log.v(TAG, "seeking");
+            }
 
-    public class CircleSeekBarListener implements CircularSeekBar.OnCircularSeekBarChangeListener {
-        @Override
-        public void onProgressChanged(CircularSeekBar circularSeekBar, int progress, boolean fromUser) {
-            TextView t = (TextView)findViewById(R.id.progress);
-            t.setText(Integer.toString(progress));
+            public void onStopTrackingTouch(CircularSeekBar seekBar) {
+            }
+
+            public void onStartTrackingTouch(CircularSeekBar seekBar) {
+            }
         }
-
-        public void onStopTrackingTouch(CircularSeekBar seekBar){}
-
-        public void onStartTrackingTouch(CircularSeekBar seekBar){}
     }
-
     private void updateUI(){
         seekbar.setProgress(seekbar.getProgress() + 1);
     }
 
     public void onPlayClicked(View view){
         String filename = FILE_PATH + "/" + generateFileName() + "." + extension;
-        Button playBtn = (Button)view.findViewById(R.id.play);
 
-        if(sdr != null && sdr.isRecording() == true){
+        if(sdr != null && sdr.isRecording()){
             sdr.Stop();
             EventHandling(Event.Recording_Stop);
         } else {
@@ -216,9 +212,9 @@ public class MainActivity extends ActionBarActivity{
     }
 
     public String generateFileName(){
-        if( isExternalStorageWritable() == true){
+        if( isExternalStorageWritable()){
             // if user tap record twice, the original file it will get override.
-            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy_MM_dd_hh_mm");
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy_MM_dd_hh_mm", Locale.US);
             return dateFormat.format(new Date());
         } else{
             return "";
@@ -247,10 +243,7 @@ public class MainActivity extends ActionBarActivity{
     /* Checks if external storage is available for read and write */
     public boolean isExternalStorageWritable() {
         String state = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(state)) {
-            return true;
-        }
-        return false;
+        return Environment.MEDIA_MOUNTED.equals(state);
     }
 
     public void  LoadFile(String filename){
@@ -259,8 +252,6 @@ public class MainActivity extends ActionBarActivity{
         sna.setOnCompletionListener(new SnaCompletion());
 
         EventHandling(Event.Play_record);
-
-
     }
 
     public class SnaCompletion implements MediaPlayer.OnCompletionListener{

@@ -38,7 +38,6 @@ import android.graphics.RectF;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -523,10 +522,6 @@ public class CircularSeekBar extends View {
     private void calculateProgressDegrees() {
         mProgressDegrees = mPointerPosition - mStartAngle; // Verified
         mProgressDegrees = (mProgressDegrees < 0 ? 360f + mProgressDegrees : mProgressDegrees); // Verified
-
-        Log.v("SEEK-Pos", new Float(mPointerPosition).toString());
-        Log.v("SEEK-start", new Float(mStartAngle).toString());
-        Log.v("SEEK", new Float(mProgressDegrees).toString());
     }
 
     /**
@@ -593,8 +588,6 @@ public class CircularSeekBar extends View {
             p.setColor(h.color);
             Path a = new Path();
             a.addArc(mCircleRectF, h.start, h.end);
-            Log.e("Angle", Float.toString(h.start));
-
             canvas.drawPath(a, p);
         }
 
