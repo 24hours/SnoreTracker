@@ -38,6 +38,7 @@ import android.graphics.RectF;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -1127,8 +1128,12 @@ public class CircularSeekBar extends View {
         return mStartAngle;
     }
 
+
     public void highlight(int start, int end, int color, int zindex){
-        this.highlightList.add(new highlight(intToAngle(start), intToAngle(end), color, zindex));
+        float endAngle = (intToAngle(end)  + (mStartAngle - 350f)) % 360f;
+        float startAngle = (intToAngle(start) + (mStartAngle - 350f)) % 360f;
+        this.highlightList.add(new highlight(startAngle, endAngle-startAngle, color, zindex));
+
         Collections.sort(highlightList, new Comparator<highlight>() {
             @Override
             public int compare(highlight  h1, highlight  h2)
@@ -1145,7 +1150,7 @@ public class CircularSeekBar extends View {
     }
 
     private float intToAngle(int progress){
-        return (((progress * 360 ) /  getMax())  + 360) % 360f;
+        return ((((float)progress/(float)getMax()) * 360)% 360f );
     }
 
     public class highlight{
