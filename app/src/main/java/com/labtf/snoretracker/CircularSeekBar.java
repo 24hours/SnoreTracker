@@ -614,16 +614,17 @@ public class CircularSeekBar extends View {
      * Set the progress of the CircularSeekBar.
      * If the progress is the same, then any listener will not receive a onProgressChanged event.
      * @param progress The progress to set the CircularSeekBar to.
+     * @param trigger flag to trigger onProgressChanged
      */
-    public void setProgress(int progress) {
-        if (mProgress != progress) {
-            mProgress = progress;
+    public void setProgress(int progress, boolean trigger) {
+        mProgress = progress;
+        if (trigger) {
             if (mOnCircularSeekBarChangeListener != null) {
                 mOnCircularSeekBarChangeListener.onProgressChanged(this, progress, false);
             }
-            recalculateAll();
-            invalidate();
         }
+        recalculateAll();
+        invalidate();
     }
 
     private void setProgressBasedOnAngle(float angle) {
