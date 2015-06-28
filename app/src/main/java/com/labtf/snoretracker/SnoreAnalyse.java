@@ -2,33 +2,28 @@ package com.labtf.snoretracker;
 
 /**
  * Created by leeyeongkhang on 12/15/14.
+ * Play and analyse the recording
  */
-import android.app.Service;
-import android.media.MediaPlayer;
-import android.media.MediaRecorder;
-import android.media.AudioRecord;
-import android.media.AudioFormat;
-import android.os.Environment;
-import android.util.Log;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
+import android.media.MediaPlayer;
+import android.util.Log;
 import java.io.IOException;
 
-public class SnoreAnalyse implements MediaPlayer.OnPreparedListener{
-    private String FILE_PATH;
+public class SnoreAnalyse {
+    String FILE_PATH;
     private MediaPlayer player;
     private boolean prepared, playing = false;
     public final String TAG = "SnoreAnalyse";
+    private OnSnoreAnalyseChangeListener snalistener;
 
-
-    public SnoreAnalyse(String file_path){
+    public SnoreAnalyse(String file_path, OnSnoreAnalyseChangeListener l){
         FILE_PATH = file_path;
+        snalistener = l;
         player = new MediaPlayer();
         try {
             player.setDataSource(file_path);
-            player.setOnPreparedListener(this);
+            player.setOnPreparedListener(new preparedListener());
+            player.setOnCompletionListener(new completionListener());
             player.prepareAsync();
         }catch(IOException e){
             Log.e(TAG, "Failed to open " + file_path + " because : " + e.getMessage());
@@ -43,23 +38,16 @@ public class SnoreAnalyse implements MediaPlayer.OnPreparedListener{
 //        f = null;
     }
 
-    @Override
-    public void onPrepared(MediaPlayer player) {
-        prepared = true;
-        if (playing == true) {
-            player.start();
-        }
-    }
-
     public void Play(){
-        if (prepared == true){
+        if (prepared){
             player.start();
         }
         playing = true;
     }
 
+    @SuppressWarnings("unused")
     public void Stop(){
-        if( player.isPlaying() == false){
+        if(!player.isPlaying()){
             player.stop();
         }
     }
@@ -74,7 +62,36 @@ public class SnoreAnalyse implements MediaPlayer.OnPreparedListener{
         return playing;
     }
 
-    public void setOnCompletionListener (MediaPlayer.OnCompletionListener listener){
-        player.setOnCompletionListener(listener);
+    public int GetDuration(){
+        return player.getDuration();
+    }
+
+    private class completionListener implements MediaPlayer.OnCompletionListener{
+        @Override
+        public void onCompletion(MediaPlayer mp) {
+            if(snalistener != null){
+                snalistener.onCompletePlaying(SnoreAnalyse.this);
+            }
+        }
+    }
+
+    private class preparedListener implements MediaPlayer.OnPreparedListener{
+
+        @Override
+        public void onPrepared(MediaPlayer mp) {
+            prepared = true;
+            if (playing) {
+                player.start();
+            }
+
+            if(snalistener != null){
+                snalistener.onPrepared(SnoreAnalyse.this);
+            }
+        }
+    }
+
+    public interface OnSnoreAnalyseChangeListener {
+        void onPrepared(SnoreAnalyse sna);
+        void onCompletePlaying(SnoreAnalyse sna);
     }
 }
