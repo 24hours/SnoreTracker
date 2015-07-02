@@ -15,6 +15,7 @@
         <attr name="pointer_halo_width" format="float" />
         <attr name="pointer_halo_border_width" format="float"></attr>
         <attr name="circle_color" format="string"></attr>
+        <attr name="base_color" format="string"></attr>
         <attr name="circle_progress_color" format="string"></attr>
         <attr name="pointer_color" format="string"></attr>
         <attr name="pointer_halo_color" format="string"></attr>

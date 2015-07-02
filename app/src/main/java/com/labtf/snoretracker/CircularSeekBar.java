@@ -57,7 +57,7 @@ public class CircularSeekBar extends View {
     /**
      * Minimum touch target size in DP. 48dp is the Android design recommendation
      */
-    private final float MIN_TOUCH_TARGET_DP = 48;
+    final float MIN_TOUCH_TARGET_DP = 48;
 
     // Default values
     private static final float DEFAULT_CIRCLE_X_RADIUS = 30f;
@@ -71,6 +71,7 @@ public class CircularSeekBar extends View {
     private static final int DEFAULT_MAX = 100;
     private static final int DEFAULT_PROGRESS = 0;
     private static final int DEFAULT_CIRCLE_COLOR = Color.DKGRAY;
+    private static final int DEFAULT_BASE_COLOR = Color.parseColor("#90EE90");
     private static final int DEFAULT_CIRCLE_PROGRESS_COLOR = Color.argb(235, 74, 138, 255);
     private static final int DEFAULT_POINTER_COLOR = Color.argb(235, 74, 138, 255);
     private static final int DEFAULT_POINTER_HALO_COLOR = Color.argb(135, 74, 138, 255);
@@ -100,6 +101,11 @@ public class CircularSeekBar extends View {
     private Paint mCircleProgressPaint;
 
     /**
+     * {@code Paint} instance used to draw the base circle (represents duration).
+     */
+    private Paint mCircleBasePaint;
+
+    /**
      * {@code Paint} instance used to draw the glow from the active circle.
      */
     private Paint mCircleProgressGlowPaint;
@@ -120,6 +126,12 @@ public class CircularSeekBar extends View {
      * {@code Paint} instance used to draw the border of the pointer, outside of the halo.
      */
     private Paint mPointerHaloBorderPaint;
+
+    /**
+     * {@code Paint} instance use for highlighter
+     */
+    private Paint mHighlightPaint;
+
 
     /**
      * The width of the circle (in pixels).
@@ -201,6 +213,11 @@ public class CircularSeekBar extends View {
     private int mCircleProgressColor = DEFAULT_CIRCLE_PROGRESS_COLOR;
 
     /**
+     * Holds the color value for {@code mCircleBasePath} before the {@code Paint} instance is created.
+     */
+    private int mCircleBaseColor = DEFAULT_BASE_COLOR;
+
+    /**
      * Holds the alpha value for {@code mPointerHaloPaint}.
      */
     private int mPointerAlpha = DEFAULT_POINTER_ALPHA;
@@ -232,6 +249,11 @@ public class CircularSeekBar extends View {
     private Path mCircleProgressPath;
 
     /**
+     * {@code Path} used to draw the base on the circle.
+     */
+    private Path mCircleBasePath;
+
+    /**
      * Max value that this CircularSeekBar is representing.
      */
     private int mMax;
@@ -240,6 +262,11 @@ public class CircularSeekBar extends View {
      * Progress value that this CircularSeekBar is representing.
      */
     private int mProgress;
+
+    /**
+     * Progress value that this CircularSeekBar is representing.
+     */
+    private float mTotalRange;
 
     /**
      * If true, then the user can specify the X and Y radii.
@@ -410,6 +437,15 @@ public class CircularSeekBar extends View {
             }
         }
 
+        tempColor = attrArray.getString(R.styleable.CircularSeekBar_base_color);
+        if (tempColor != null) {
+            try {
+                mCircleBaseColor = Color.parseColor(tempColor);
+            } catch (IllegalArgumentException e) {
+                mCircleBaseColor = DEFAULT_BASE_COLOR;
+            }
+        }
+
         tempColor = attrArray.getString(R.styleable.CircularSeekBar_circle_progress_color);
         if (tempColor != null) {
             try {
@@ -450,8 +486,6 @@ public class CircularSeekBar extends View {
             //mStartAngle = mStartAngle + 1f;
             mEndAngle = mEndAngle - .1f;
         }
-
-
     }
 
     /**
@@ -482,6 +516,24 @@ public class CircularSeekBar extends View {
         mCircleProgressPaint.setStrokeJoin(Paint.Join.ROUND);
         mCircleProgressPaint.setStrokeCap(Paint.Cap.SQUARE);
 
+        mCircleBasePaint = new Paint();
+        mCircleBasePaint.setAntiAlias(true);
+        mCircleBasePaint.setDither(true);
+        //TODO : remove this
+        mCircleBasePaint.setColor(mCircleBaseColor);
+        mCircleBasePaint.setStrokeWidth(mCircleStrokeWidth);
+        mCircleBasePaint.setStyle(Paint.Style.STROKE);
+        mCircleBasePaint.setStrokeJoin(Paint.Join.ROUND);
+        mCircleBasePaint.setStrokeCap(Paint.Cap.SQUARE);
+
+        mHighlightPaint = new Paint();
+        mHighlightPaint.setAntiAlias(true);
+        mHighlightPaint.setDither(true);
+        mHighlightPaint.setStrokeWidth(mCircleStrokeWidth);
+        mHighlightPaint.setStyle(Paint.Style.STROKE);
+        mHighlightPaint.setStrokeJoin(Paint.Join.ROUND);
+        mHighlightPaint.setStrokeCap(Paint.Cap.SQUARE);
+
         mCircleProgressGlowPaint = new Paint();
         mCircleProgressGlowPaint.set(mCircleProgressPaint);
 
@@ -503,6 +555,15 @@ public class CircularSeekBar extends View {
         mPointerHaloBorderPaint.setStrokeWidth(mPointerHaloBorderWidth);
         mPointerHaloBorderPaint.setStyle(Paint.Style.STROKE);
 
+    }
+
+    /*
+     * Highlight the area you allow to seek around.
+     */
+    public void SetBaseRange(int totalRange) {
+        mTotalRange = intToAngle(totalRange) % 360f;
+        recalculateAll();
+        invalidate();
     }
 
     /**
@@ -552,6 +613,9 @@ public class CircularSeekBar extends View {
         mCirclePath.addArc(mCircleRectF, 270, 360); // background
 
         mCircleProgressPath = new Path();
+        mCircleBasePath = new Path();
+
+        mCircleBasePath.addArc(mCircleRectF, mStartAngle, mTotalRange);
         // mProgress seems to hate 0 as sweepAngle, use 0.05f to replace 0.
         mCircleProgressPath.addArc(mCircleRectF, mStartAngle, mProgressDegrees > 0.05f? mProgressDegrees : 0.05f);
     }
@@ -566,30 +630,20 @@ public class CircularSeekBar extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-
         canvas.translate(this.getWidth() / 2, this.getHeight() / 2);
 
         canvas.drawPath(mCirclePath, mCirclePaint);
+        canvas.drawPath(mCircleBasePath, mCircleBasePaint);
+
         canvas.drawPath(mCircleProgressPath, mCircleProgressGlowPaint);
         canvas.drawPath(mCircleProgressPath, mCircleProgressPaint);
 
-        // TODO : cache this thing
-        Paint p = new Paint();
-        p.setAntiAlias(true);
-        p.setDither(true);
-        p.setStrokeWidth(mCircleStrokeWidth);
-        p.setStyle(Paint.Style.STROKE);
-        p.setStrokeJoin(Paint.Join.ROUND);
-        p.setStrokeCap(Paint.Cap.SQUARE);
         Iterator<highlight> it = highlightList.iterator();
-        while(it.hasNext())
-        {
-            highlight h = it.next();
-            //Do something with obj
-            p.setColor(h.color);
+        for(highlight h : highlightList){
+            mHighlightPaint.setColor(h.color);
             Path a = new Path();
             a.addArc(mCircleRectF, h.start, h.end);
-            canvas.drawPath(a, p);
+            canvas.drawPath(a, mHighlightPaint);
         }
 
         canvas.drawPath(mCirclePath, mCircleFillPaint);
@@ -606,8 +660,7 @@ public class CircularSeekBar extends View {
      * @return The progress of the CircularSeekBar.
      */
     public int getProgress() {
-        int progress = Math.round((float)mMax * mProgressDegrees / mTotalCircleDegrees);
-        return progress;
+        return Math.round((float)mMax * mProgressDegrees / mTotalCircleDegrees);
     }
 
     /**
@@ -637,11 +690,8 @@ public class CircularSeekBar extends View {
         calculateTotalDegrees();
         calculatePointerAngle();
         calculateProgressDegrees();
-
         initRects();
-
         initPaths();
-
         calculatePointerXYPosition();
     }
 
@@ -1150,6 +1200,11 @@ public class CircularSeekBar extends View {
         invalidate();
     }
 
+    public void ClearHighlight(){
+        this.highlightList.clear();
+        recalculateAll();
+        invalidate();
+    }
     private float intToAngle(int progress){
         return ((((float)progress/(float)getMax()) * 360)% 360f );
     }
