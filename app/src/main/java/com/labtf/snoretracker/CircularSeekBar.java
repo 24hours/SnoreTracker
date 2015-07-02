@@ -25,6 +25,12 @@ package com.labtf.snoretracker;
  *
  * Although I did not used the code from either project directly, they were both used as
  * reference material, and as a result, were extremely helpful.
+ *
+ *
+ * Note:
+ *  - Everything depend on initRects() and initPath() to called first before any drawing is possible
+ *  - in order to draw something, you should append your 'drawing code' after them
+ *  - or during onDraw, although this is not encouraged.
  */
 
 import android.content.Context;
@@ -71,7 +77,7 @@ public class CircularSeekBar extends View {
     private static final int DEFAULT_MAX = 100;
     private static final int DEFAULT_PROGRESS = 0;
     private static final int DEFAULT_CIRCLE_COLOR = Color.DKGRAY;
-    private static final int DEFAULT_BASE_COLOR = Color.parseColor("#90EE90");
+    private static final int DEFAULT_BASE_COLOR = Color.argb(235, 144, 238, 144);
     private static final int DEFAULT_CIRCLE_PROGRESS_COLOR = Color.argb(235, 74, 138, 255);
     private static final int DEFAULT_POINTER_COLOR = Color.argb(235, 74, 138, 255);
     private static final int DEFAULT_POINTER_HALO_COLOR = Color.argb(135, 74, 138, 255);
@@ -128,12 +134,6 @@ public class CircularSeekBar extends View {
     private Paint mPointerHaloBorderPaint;
 
     /**
-     * {@code Paint} instance use for highlighter
-     */
-    private Paint mHighlightPaint;
-
-
-    /**
      * The width of the circle (in pixels).
      */
     private float mCircleStrokeWidth;
@@ -180,7 +180,7 @@ public class CircularSeekBar extends View {
     /**
      * {@code RectF} that represents the circle (or ellipse) of the seekbar.
      */
-    private RectF mCircleRectF = new RectF();
+    protected RectF mCircleRectF = new RectF();
 
     /**
      * Holds the color value for {@code mPointerPaint} before the {@code Paint} instance is created.
@@ -519,20 +519,11 @@ public class CircularSeekBar extends View {
         mCircleBasePaint = new Paint();
         mCircleBasePaint.setAntiAlias(true);
         mCircleBasePaint.setDither(true);
-        //TODO : remove this
         mCircleBasePaint.setColor(mCircleBaseColor);
         mCircleBasePaint.setStrokeWidth(mCircleStrokeWidth);
         mCircleBasePaint.setStyle(Paint.Style.STROKE);
         mCircleBasePaint.setStrokeJoin(Paint.Join.ROUND);
         mCircleBasePaint.setStrokeCap(Paint.Cap.SQUARE);
-
-        mHighlightPaint = new Paint();
-        mHighlightPaint.setAntiAlias(true);
-        mHighlightPaint.setDither(true);
-        mHighlightPaint.setStrokeWidth(mCircleStrokeWidth);
-        mHighlightPaint.setStyle(Paint.Style.STROKE);
-        mHighlightPaint.setStrokeJoin(Paint.Join.ROUND);
-        mHighlightPaint.setStrokeCap(Paint.Cap.SQUARE);
 
         mCircleProgressGlowPaint = new Paint();
         mCircleProgressGlowPaint.set(mCircleProgressPaint);
@@ -639,12 +630,9 @@ public class CircularSeekBar extends View {
         canvas.drawPath(mCircleProgressPath, mCircleProgressPaint);
 
         Iterator<highlight> it = highlightList.iterator();
-        for(highlight h : highlightList){
-            mHighlightPaint.setColor(h.color);
-            Path a = new Path();
-            a.addArc(mCircleRectF, h.start, h.end);
-            canvas.drawPath(a, mHighlightPaint);
-        }
+        for(highlight h : highlightList)
+            canvas.drawPath(h.setPath(mCircleRectF), h.paint);
+
 
         canvas.drawPath(mCirclePath, mCircleFillPaint);
 
@@ -1210,15 +1198,34 @@ public class CircularSeekBar extends View {
     }
 
     public class highlight{
+        public Path path;
+        public Paint paint;
         private float start, end;
         public int color;
         private int zindex;
 
         public highlight(float start , float end , int color, int zindex) {
+            paint = new Paint();
+            paint = new Paint();
+            paint.setAntiAlias(true);
+            paint.setDither(true);
+            paint.setStrokeWidth(mCircleStrokeWidth);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeJoin(Paint.Join.ROUND);
+            paint.setStrokeCap(Paint.Cap.SQUARE);
+            paint.setColor(color);
+
+            path = new Path();
+
             this.start = start;
             this.end = end;
             this.color = color;
             this.zindex = zindex;
+        }
+
+        public Path setPath(RectF rect){
+            path.addArc(rect, start, end);
+            return path;
         }
     }
 }
