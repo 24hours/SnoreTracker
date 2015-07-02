@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Timer;
+import java.util.TimerTask;
 
 // TODO : Play the sound as seeked by user
 // TODO : Add "magnified" area to allow user easily see highlighted area
@@ -55,6 +57,8 @@ public class MainActivity extends ActionBarActivity{
     private SnoreAnalyse sna;
     private SoundRecorder sdr;
     private static CircularSeekBar seekbar;
+    private static TimerTask ticker;
+    private static Timer timer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -153,10 +157,7 @@ public class MainActivity extends ActionBarActivity{
             seekbar = (CircularSeekBar) rootView.findViewById(R.id.seekbar);
             seekbar.setOnSeekBarChangeListener(new CircleSeekBarListener());
             seekbar.setStartAngle(-90);
-            seekbar.setProgress(0);
-            seekbar.setProgress(50);
-            seekbar.highlight(0, 6000, Color.BLUE, 1);
-            seekbar.highlight(500, 3000, Color.RED, 2);
+            seekbar.setProgress(0, false);
 
             return rootView;
         }
@@ -178,7 +179,7 @@ public class MainActivity extends ActionBarActivity{
         }
     }
     private void updateUI(){
-        seekbar.setProgress(seekbar.getProgress() + 1);
+        seekbar.setProgress(seekbar.getProgress() + 1, false);
     }
 
     public void onPlayClicked(View view){
@@ -204,6 +205,7 @@ public class MainActivity extends ActionBarActivity{
     public void onListenClicked(View view){
         if(sna.IsPlaying()) {
             sna.Pause();
+
             EventHandling(Event.Stop_record);
         } else {
             sna.Play();
@@ -227,9 +229,15 @@ public class MainActivity extends ActionBarActivity{
         switch(e){
             case Play_record:
                 ListenBtn.setText("Pause");
+                if(!tick(true)){
+                    Log.e(TAG, "ticker is not ticking");
+                }
                 break;
             case Stop_record:
                 ListenBtn.setText("Listen");
+                if(!tick(false)){
+                    Log.e(TAG, "ticker false to stop ticking");
+                }
                 break;
             case Recording_Start:
                 playBtn.setText("Stop");
@@ -247,17 +255,23 @@ public class MainActivity extends ActionBarActivity{
     }
 
     public void  LoadFile(String filename){
-        sna = new SnoreAnalyse(FILE_PATH + "/" +filename, new OnSnoreAnalyseChangeListener());
-        sna.Play();
+        if(sna != null ){
+            if(sna.IsPlaying()){
+                sna.Stop();
+            }
+        }
 
-        EventHandling(Event.Play_record);
+        sna = new SnoreAnalyse(FILE_PATH + "/" +filename, new OnSnoreAnalyseChangeListener());
+        seekbar.ClearHighlight();
     }
 
     public class OnSnoreAnalyseChangeListener implements SnoreAnalyse.OnSnoreAnalyseChangeListener {
 
         public void onPrepared(SnoreAnalyse sna){
             sna.Play();
-            Log.v(TAG, new Integer(sna.GetDuration()).toString());
+            EventHandling(Event.Play_record);
+            Log.i(TAG, "Padding file to make the effect visible");
+            seekbar.SetBaseRange(sna.GetDuration()/10);
         }
 
        public void onCompletePlaying(SnoreAnalyse sna){
@@ -265,10 +279,39 @@ public class MainActivity extends ActionBarActivity{
                @Override
                public void run() { EventHandling(Event.Stop_record);  }
            });
+           if(timer != null){
+               timer.cancel();
+           }
        }
-//
-//        public abstract void onStartTrackingTouch(CircularSeekBar seekBar);
     }
+
+    private boolean tick(boolean start){
+        if(!start){
+            if( timer != null) {
+                timer.cancel();
+                timer = null;
+                return true;
+            } else {
+                return false;
+            }
+        }else{
+            ticker = new TimerTask() {
+                @Override
+                public void run() {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            updateUI();
+                        }
+                    });
+                }
+            };
+            timer = new Timer(false);
+            timer.schedule(ticker, 0, 1000);
+            return true;
+        }
+    }
+
     public enum Event {
         Play_record,
         Stop_record,
