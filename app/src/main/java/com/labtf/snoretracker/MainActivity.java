@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.SystemClock;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
@@ -17,6 +18,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.util.Log;
+import android.widget.Chronometer;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -59,6 +61,7 @@ public class MainActivity extends ActionBarActivity{
     private static CircularSeekBar seekbar;
     private static TimerTask ticker;
     private static Timer timer;
+    private static Chronometer counter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -159,6 +162,8 @@ public class MainActivity extends ActionBarActivity{
             seekbar.setStartAngle(-90);
             seekbar.setProgress(0, false);
 
+            counter = (Chronometer) rootView.findViewById(R.id.chronometer);
+
             return rootView;
         }
 
@@ -241,10 +246,13 @@ public class MainActivity extends ActionBarActivity{
                 break;
             case Recording_Start:
                 playBtn.setText("Stop");
+                counter.setBase(SystemClock.elapsedRealtime());
+                counter.start();
                 break;
             case Recording_Stop:
                 playBtn.setText("Record");
                 sdr = null;
+                counter.stop();
                 break;
         }
     }
