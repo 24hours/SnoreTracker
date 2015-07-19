@@ -1,6 +1,9 @@
 package com.labtf.snoretracker;
 //http://romannurik.github.io/AndroidAssetStudio/icons-launcher.html
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.content.Context;
 import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.os.Bundle;
@@ -9,6 +12,7 @@ import android.os.SystemClock;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBarActivity;
 import android.view.LayoutInflater;
@@ -62,6 +66,7 @@ public class MainActivity extends ActionBarActivity{
     private static TimerTask ticker;
     private static Timer timer;
     private static Chronometer counter;
+    private Notification statusbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,6 +85,7 @@ public class MainActivity extends ActionBarActivity{
         }
 
         FILE_PATH = file.getAbsolutePath();
+        buildStatusBar();
     }
 
     @Override
@@ -217,6 +223,18 @@ public class MainActivity extends ActionBarActivity{
             EventHandling(Event.Play_record);
         }
     }
+    private void buildStatusBar(){
+        Log.v(TAG, "building notifcation");
+        NotificationCompat.Builder statusBar =
+                new NotificationCompat.Builder(this)
+                        .setContentTitle("SnoreTracker")
+                        .setContentText("Recording...")
+                        .setSmallIcon(R.drawable.ic_stat_s);
+
+        NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        // mId allows you to update the notification later on.
+        mNotificationManager.notify(0, statusBar.build());
+    }
 
     public String generateFileName(){
         if( isExternalStorageWritable()){
@@ -240,7 +258,7 @@ public class MainActivity extends ActionBarActivity{
                 break;
             case Stop_record:
                 ListenBtn.setText("Listen");
-                if(!tick(false)){
+                if(!tick(false)) {
                     Log.e(TAG, "ticker false to stop ticking");
                 }
                 break;
@@ -248,6 +266,7 @@ public class MainActivity extends ActionBarActivity{
                 playBtn.setText("Stop");
                 counter.setBase(SystemClock.elapsedRealtime());
                 counter.start();
+                buildStatusBar();
                 break;
             case Recording_Stop:
                 playBtn.setText("Record");
